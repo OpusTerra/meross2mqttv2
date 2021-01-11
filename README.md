@@ -1,4 +1,4 @@
-# meross2mqttv2
+# meross2mqtt v2
 
 Meross bridge for OpnHAB 2
 
