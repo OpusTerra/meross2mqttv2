@@ -5,7 +5,7 @@ Meross MQTT bridge for OpenHAB 2
 Using excellent Python library MerossIot from albertogeniola
 https://github.com/albertogeniola/MerossIot
 
-and the original script code from from daJoe Johannes R
+and the original script code from daJoe Johannes R
 Meross: python library with mqtt
 https://community.openhab.org/t/meross-python-library-with-mqtt/83362
 
