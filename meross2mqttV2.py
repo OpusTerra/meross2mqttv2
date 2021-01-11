@@ -1,5 +1,6 @@
 #!/usr/local/bin/python3.9
 
+import signal
 import os
 import paho.mqtt.client as mqtt
 from meross_iot.manager import MerossManager
@@ -75,7 +76,7 @@ class MerossOpenHabBridge:
             self.client.username_pw_set(self.args.mqtt_usr, password=mqtt_password)
 
         lwm = "Meross Gone Offline"  # Last will message
-        print("Setting Last will message=", lwm, "topic is", self.args.mqtt_ident)
+        self.log.info("Setting Last will message=", lwm, "topic is", self.args.mqtt_ident)
         self.client.will_set(self.args.mqtt_ident, lwm, qos=1, retain=False)
 
         self.client.connect(self.args.mqtt_server)
@@ -317,6 +318,9 @@ class Runner:
         self.log = self.setup_logging()
         self.bridge = None
 
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
+
     def run(self):
         loop = asyncio.get_event_loop()
         self.bridge = MerossOpenHabBridge(self.args, self.log, loop)
@@ -332,14 +336,19 @@ class Runner:
             loop.close()
         sys.exit(0)
 
+    def exit_gracefully(self, signum, frame):
+        self.log.info('captured signal %d' % signum)
+        raise SystemExit
+
     def setup_logging(self):
         if self.args.verbose:
             loglevel = logging.DEBUG
         else:
             loglevel = logging.INFO
 
-        # for handler in logging.root.handlers[:]:
-        #    logging.root.removeHandler(handler)
+        # comment next 2 lines to get loggind at stdout
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
 
         if self.args.logfile:
             logging.basicConfig(level=loglevel, filename=self.args.logfile,
