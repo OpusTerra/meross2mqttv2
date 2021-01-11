@@ -9,5 +9,5 @@ and the original script code from daJoe Johannes R
 Meross: python library with mqtt
 https://community.openhab.org/t/meross-python-library-with-mqtt/83362
 
-Here is an upgraded version of the script using library MerossIot V 0.4 with async fucntions and Python3.9
+Here is an upgraded version of the script for Python3.9 using MerossIot V 0.4 Python3.9 with async fucntions
 
