@@ -23,6 +23,7 @@ from meross_iot.controller.device import BaseDevice
 # and
 # https://gitlab.awesome-it.de/daniel.morlock/meross-bridge
 
+ 
 def getState(d, cNo=None):
     status = False
 
@@ -76,7 +77,7 @@ class MerossOpenHabBridge:
             self.client.username_pw_set(self.args.mqtt_usr, password=mqtt_password)
 
         lwm = "Meross Gone Offline"  # Last will message
-        self.log.info("Setting Last will message=", lwm, "topic is", self.args.mqtt_ident)
+        self.log.info(f'Setting Last will message "{lwm}" topic is {self.args.mqtt_ident}')
         self.client.will_set(self.args.mqtt_ident, lwm, qos=1, retain=False)
 
         self.client.connect(self.args.mqtt_server)
@@ -202,7 +203,10 @@ class MerossOpenHabBridge:
         for d in all_devices:
             # next statement is mandadory
             # ERROR:Please invoke async_update() for this device (couleur) before accessing its state. Failure to do so may result in inconsistent state.
-            await d.async_update()  # fetch the complete device state.
+            try:
+                await d.async_update()  # fetch the complete device state.
+            except:
+                self.log.error(f'async_update timeout')
 
             if len(d.channels) > 1:
                 channels = d.channels
@@ -346,7 +350,7 @@ class Runner:
         else:
             loglevel = logging.INFO
 
-        # comment next 2 lines to get loggind at stdout
+        # comment next 2 lines to get logging at stdout when debugging
         for handler in logging.root.handlers[:]:
             logging.root.removeHandler(handler)
 
