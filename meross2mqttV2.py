@@ -355,7 +355,7 @@ class Runner:
             logging.root.removeHandler(handler)
 
         if self.args.logfile:
-            logging.basicConfig(level=loglevel, filename=self.args.logfile,
+            logging.basicConfig(level=loglevel, filename=self.args.logfile,  encoding='utf-8',
                                 format='%(asctime)s %(levelname)-8s %(name)-10s %(message)s')
         else:
             logging.basicConfig(level=loglevel, format='%(asctime)s %(levelname)-8s %(name)-10s %(message)s')
