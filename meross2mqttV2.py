@@ -16,14 +16,14 @@ from meross_iot.model.push.generic import GenericPushNotification
 from meross_iot.controller.device import BaseDevice
 
 # Denis Lambert - Janv 2021
-# Using meross_iot 0.4
+
 # https://github.com/albertogeniola/MerossIot
 # and extensively based on
 # https://community.openhab.org/t/meross-python-library-with-mqtt/83362
 # and
 # https://gitlab.awesome-it.de/daniel.morlock/meross-bridge
 
- 
+
 def getState(d, cNo=None):
     status = False
 
@@ -89,7 +89,9 @@ class MerossOpenHabBridge:
 
         password = self.args.password or os.environ.get('MEROSS_PASSWORD')
         self.meross_api = await MerossHttpClient.async_from_user_password(email=self.args.email, password=password)
-        self.manager = MerossManager(http_client=self.meross_api)
+
+        # voir https://githubmemory.com/repo/albertogeniola/MerossIot/issues/154
+        self.manager = MerossManager(http_client=self.meross_api, over_limit_threshold_percentage=500)
         self.manager.register_push_notification_handler_coroutine(self.event_handler)
 
         await self.manager.async_init()
@@ -103,6 +105,7 @@ class MerossOpenHabBridge:
 
     async def stop(self):
         self.client.publish(self.args.mqtt_ident, payload=json.dumps({"state": False}), qos=0, retain=True)
+        self.manager.unregister_push_notification_handler_coroutine(self.event_handler)
         self.stopped = True
         self.manager.close()
         await self.meross_api.async_logout()
@@ -194,7 +197,7 @@ class MerossOpenHabBridge:
     # and channel device is meross/device name/channel_x/set
     # where the expected json message is
     # { "state" : "OFF"} or { "state" : "ON"}
-    # samples topics: meross/color-bulb/set, meross/Smart Outdoor Plug 2/channel_1/set
+    # samples topics: meross/color-bulb/set, meross/Smart Outdoor Plug 2/channel_1/set meross/couleur/set
     # todo: Add topic to support change of color bulb color
     async def subscribe_broker(self):
         # print("All the supported devices I found:")
@@ -225,7 +228,11 @@ class MerossOpenHabBridge:
 
     # Message handler from Meross MQTT
     # will be notified when there is a device change anywhere in the cloud
-    async def event_handler(self, push_notification: GenericPushNotification, target_devices: [BaseDevice]):
+    # async def event_handler(self, push_notification: GenericPushNotification, target_devices: [BaseDevice]):
+    # 21 Feb. 2023: Ajouté anager: MerossManager pour retirer erreur du mauvais nombre de parametres
+    # event_handler() takes 3 positional arguments but 4 were given
+    # https://community.openhab.org/t/meross-python-library-with-mqtt/83362/40?u=denis_lambert
+    async def event_handler(self, push_notification: GenericPushNotification, target_devices: [BaseDevice], manager: MerossManager):
         try:
             if push_notification.namespace == Namespace.CONTROL_BIND \
                     or push_notification.namespace == Namespace.SYSTEM_ONLINE \
@@ -355,7 +362,7 @@ class Runner:
             logging.root.removeHandler(handler)
 
         if self.args.logfile:
-            logging.basicConfig(level=loglevel, filename=self.args.logfile,  encoding='utf-8',
+            logging.basicConfig(level=loglevel, filename=self.args.logfile,
                                 format='%(asctime)s %(levelname)-8s %(name)-10s %(message)s')
         else:
             logging.basicConfig(level=loglevel, format='%(asctime)s %(levelname)-8s %(name)-10s %(message)s')
