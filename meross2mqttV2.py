@@ -14,6 +14,7 @@ import sys
 from queue import Queue, Empty
 from meross_iot.model.push.generic import GenericPushNotification
 from meross_iot.controller.device import BaseDevice
+from meross_iot.utilities.misc import current_version
 
 # Denis Lambert - Janv 2021
 
@@ -23,6 +24,8 @@ from meross_iot.controller.device import BaseDevice
 # and
 # https://gitlab.awesome-it.de/daniel.morlock/meross-bridge
 
+_MODULE_VERSION = current_version()
+_DEFAULT_UA_HEADER = f"MerossIOT/{_MODULE_VERSION}"
 
 def getState(d, cNo=None):
     status = False
@@ -64,10 +67,13 @@ class MerossOpenHabBridge:
         self.queue = Queue()
         self.stopped = False
         self.mqtt_auth = self.args.mqtt_usr is not None and self.args.mqtt_pswd is not None
+        self.ua_header: str = _DEFAULT_UA_HEADER
 
     async def start(self):
 
         self.log.info("Starting Meross <> OpenHAB task")
+
+        self.log.info(f"MerossOpenHabBridge using {self.ua_header}")
 
         self.client = mqtt.Client(self.args.mqtt_ident, clean_session=True)
 
