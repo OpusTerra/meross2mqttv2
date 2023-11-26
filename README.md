@@ -16,7 +16,7 @@ Here is an upgraded version of the script for Python3.9 using MerossIot V 0.4 Py
 Please refer to sample_meross2mqttV2.service as an example on how to use this application as a service
 ## Changelog
 
-#### Nov 2023
+#### 2.3
 
 - This version breaks backward compatibility with Meross LOGIN method. When upgrading to this version, 
 make sure to pass the new api_base_url as a parameter --api_base_url
