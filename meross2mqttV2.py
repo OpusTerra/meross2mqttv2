@@ -71,7 +71,7 @@ class MerossOpenHabBridge:
 
     async def start(self):
 
-        self.log.info("Starting Meross <> OpenHAB task")
+        self.log.info("Starting Meross <> OpenHAB bridge task")
 
         self.log.info(f"MerossOpenHabBridge using {self.ua_header}")
 
@@ -94,7 +94,8 @@ class MerossOpenHabBridge:
         self.client.on_message = self.handle_openhab_mqtt_message
 
         password = self.args.password or os.environ.get('MEROSS_PASSWORD')
-        self.meross_api = await MerossHttpClient.async_from_user_password(email=self.args.email, password=password)
+        api_base = 'https://' + self.args.api_base_url
+        self.meross_api = await MerossHttpClient.async_from_user_password(api_base_url=api_base, email=self.args.email, password=password)
 
         # voir https://githubmemory.com/repo/albertogeniola/MerossIot/issues/154
         self.manager = MerossManager(http_client=self.meross_api, over_limit_threshold_percentage=500)
@@ -211,7 +212,8 @@ class MerossOpenHabBridge:
         self.log.info("Subscribing to OpenHab MQTT:")
         for d in all_devices:
             # next statement is mandadory
-            # ERROR:Please invoke async_update() for this device (couleur) before accessing its state. Failure to do so may result in inconsistent state.
+            # ERROR:Please invoke async_update() for this device (couleur) before accessing its state.
+            # Failure to do so may result in inconsistent state.
             try:
                 await d.async_update()  # fetch the complete device state.
             except:
@@ -312,18 +314,28 @@ def parse_command_line():
     parser.add_argument('--mqtt-ident', dest='mqtt_ident', help='An unique mqtt ident to populate', default='meross')
     parser.add_argument('--mqtt-server', dest='mqtt_server', help='Hostname or IP address of mqtt server', default='localhost')
 
-    parser.add_argument('--mqtt_usr', dest='mqtt_usr', help='Username for OpenHAB MQTT broker', default=None)
+    parser.add_argument('--mqtt_usr', dest='mqtt_usr', help='Username for OpenHAB MQTT broker', default=None, required=True)
     parser.add_argument('--mqtt_pswd', dest='mqtt_pswd',
                         help='Password for  OpenHAB MQTT broker (can be specified by environment variable OPENHAB_MQTT_PASSWORD)',
-                        default=None)
+                        default=None, required=True)
 
     parser.add_argument('-e', '--email', dest='email', help='Email/Username for Meross manager', required=True)
     parser.add_argument('-p', '--password', dest='password',
                         help='Password for Meross manager (can be specified by environment variable MEROSS_PASSWORD)',
-                        default=None)
+                        default=None, required=True)
 
     parser.add_argument('-l', '--log', dest='logfile', help="Path to logfile")
     parser.add_argument('-v', '--verbose', action='store_true')
+
+    # Setup the HTTP client API from user-password
+    # When choosing the API_BASE_URL env var, choose from one of the above based on your location.
+    # Asia-Pacific: "iotx-ap.meross.com"
+    # Europe: "iotx-eu.meross.com"
+    # US: "iotx-us.meross.com"
+    parser.add_argument('--api_base_url', dest='api_base_url',
+                        help='Meross global region signin path',
+                        default=None,
+                        required=True)
 
     return parser.parse_args()
 

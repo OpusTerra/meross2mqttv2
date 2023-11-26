@@ -1,4 +1,5 @@
-meross-iot==0.4.5.9
+meross-iot==0.4.6.0
 paho-mqtt==1.6.1
 timeloop==1.0.2
 aiohttp[speedups]>=3.7.4.post0
+requests>=2.19.1

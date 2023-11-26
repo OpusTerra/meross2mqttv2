@@ -1,0 +1,16 @@
+[Unit]
+Description=meross2mqttV2
+After=mosquitto.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /etc/openhab/scripts/meross2mqttV2.py --mqtt-server 127.0.0.1 --mqtt_usr openhab --mqtt_pswd <your mqtt pwd> -e <your meross mail> -p <your meross pwd> -l var/log/meross2mqtt/meross.log -api_base_url iotx-us.meross.com
+Restart=always
+User=openhab
+Group=openhab
+Environment=PATH=/usr/bin:/usr/sbin:/etc/openhab/scripts
+Environment=NODE_ENV=production
+WorkingDirectory=/etc/openhab/scripts
+
+[Install]
+WantedBy=multi-user.target
