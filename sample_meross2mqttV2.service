@@ -1,6 +1,6 @@
 [Unit]
-Description=meross2mqttV2
-After=mosquitto.service
+Description=Meross Bridge V2 for OpenHab
+After=network-online.target mosquitto.service
 
 [Service]
 Type=simple
@@ -8,9 +8,6 @@ ExecStart=/usr/bin/python3 /etc/openhab/scripts/meross2mqttV2.py --mqtt-server 1
 Restart=always
 User=openhab
 Group=openhab
-Environment=PATH=/usr/bin:/usr/sbin:/etc/openhab/scripts
-Environment=NODE_ENV=production
-WorkingDirectory=/etc/openhab/scripts
 
 [Install]
 WantedBy=multi-user.target
