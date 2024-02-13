@@ -20,7 +20,7 @@ Please refer to sample_meross2mqttV2.service as an example on how to use this ap
 
 - This version breaks backward compatibility with Meross LOGIN method. When upgrading to this version, 
 make sure to pass the new api_base_url as a parameter --api_base_url
-	- Asia-Pacific: "iotx-ap.meross.com"
+    - Asia-Pacific: "iotx-ap.meross.com"
     - Europe: "iotx-eu.meross.com"
     - US: "iotx-us.meross.com".
 
