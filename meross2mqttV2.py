@@ -95,7 +95,15 @@ class MerossOpenHabBridge:
 
         password = self.args.password or os.environ.get('MEROSS_PASSWORD')
         api_base = 'https://' + self.args.api_base_url
-        self.meross_api = await MerossHttpClient.async_from_user_password(api_base_url=api_base, email=self.args.email, password=password)
+
+        # print(f"{api_base}  {self.args.email} {password}")
+
+        try:
+            self.meross_api = await MerossHttpClient.async_from_user_password(api_base_url=api_base, email=self.args.email, password=password)
+        except:
+            print(f"Erreur de login - ajouter des apostrophes au besoin pour encapsuler le password")
+            self.log.info(f"Erreur de login -- ajouter des apostrophes au besoin pour encapsuler le password")
+            sys.exit(1)
 
         # voir https://githubmemory.com/repo/albertogeniola/MerossIot/issues/154
         self.manager = MerossManager(http_client=self.meross_api, over_limit_threshold_percentage=500)
@@ -151,7 +159,11 @@ class MerossOpenHabBridge:
             if msg_split[0] == self.args.mqtt_ident and msg_split[-1] == "set":
                 await self.handle_message("/".join(msg_split[1:-1]), str(message.payload.decode("utf-8")))
         elif msg_split[0] == self.args.mqtt_ident and msg_split[1] == "control":
-            self.log.info("Receiving MQTT message from OpenHAB for future Meross controlling")
+            self.log.info("Receiving MQTT message '" + message.payload.decode("utf-8") + "' for Meross Bridge controlling")
+            if message.payload.decode("utf-8") == "resub":
+                await self.subscribe_broker()
+            else:
+                self.log.info("Nothing to do with '" + message.payload.decode("utf-8") + "'" )
 
         # Device level processing of the Message received from OpenHAB MQTT
     # todo: Add support to change of color bulb color from related color bulb topic
@@ -223,6 +235,8 @@ class MerossOpenHabBridge:
                 channels = d.channels
                 for i in range(len(channels)):
                     self.client.subscribe("meross/%s/channel_%i/set" % (d.name, i))
+                    # self.client.subscribe(f'{self.args.mqtt_ident}"/%s/channel_%i/set" % (d.name, i)')
+
                     self.log.info("Topic: meross/%s/channel_%i/set" % (d.name, i))
 
                     self.client.publish("meross/%s/channel_%s" % (d.name, i), getJsonMsg(d, i))
@@ -231,8 +245,10 @@ class MerossOpenHabBridge:
                 self.log.info("Topic: meross/%s/set" % d.name)
                 self.client.publish("meross/%s/channel_%s" % (d.name, 0), getJsonMsg(d, 0))
 
-        # MQTT message from OpenHAB for future Meross control
-        self.client.subscribe("meross/control")
+        # MQTT message from OpenHAB for Meross control
+        s = f'{self.args.mqtt_ident}/control'
+        self.log.info("Topic: " + s)
+        self.client.subscribe(s)
 
     # Message handler from Meross MQTT
     # will be notified when there is a device change anywhere in the cloud
@@ -351,16 +367,22 @@ class Runner:
         signal.signal(signal.SIGTERM, self.exit_gracefully)
 
     def run(self):
-        loop = asyncio.get_event_loop()
+        # loop = asyncio.get_event_loop()
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         self.bridge = MerossOpenHabBridge(self.args, self.log, loop)
 
         try:
             loop.run_until_complete(self.bridge.start())
             loop.run_until_complete(self.bridge.consume())
+            # asyncio.run(self.bridge.start())
+            # asyncio.run(self.bridge.consume())
         except KeyboardInterrupt:
             self.log.info('Interrupted by user, going down ...')
             pass
         finally:
+            pass
             loop.run_until_complete(self.bridge.stop())
             loop.close()
         sys.exit(0)
