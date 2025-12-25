@@ -25,7 +25,7 @@ make sure to pass the new api_base_url as a parameter --api_base_url
     - US: "iotx-us.meross.com".
 
 #### 2.4
-Added support dor color bulb msl120j
+Added color support for color bulb msl120j
 Publish example (change your friendly name) to get Full Green color
 
 meross/couleur/set
