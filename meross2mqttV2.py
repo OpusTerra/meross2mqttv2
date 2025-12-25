@@ -27,6 +27,7 @@ from meross_iot.utilities.misc import current_version
 _MODULE_VERSION = current_version()
 _DEFAULT_UA_HEADER = f"MerossIOT/{_MODULE_VERSION}"
 
+
 def getState(d, cNo=None):
     status = False
 
@@ -99,7 +100,8 @@ class MerossOpenHabBridge:
         # print(f"{api_base}  {self.args.email} {password}")
 
         try:
-            self.meross_api = await MerossHttpClient.async_from_user_password(api_base_url=api_base, email=self.args.email, password=password)
+            self.meross_api = await MerossHttpClient.async_from_user_password(api_base_url=api_base,
+                                                                              email=self.args.email, password=password)
         except:
             print(f"Erreur de login - ajouter des apostrophes au besoin pour encapsuler le password")
             self.log.info(f"Erreur de login -- ajouter des apostrophes au besoin pour encapsuler le password")
@@ -152,20 +154,22 @@ class MerossOpenHabBridge:
     async def async_handle_openhab_mqtt_message(self, client, userdata, message):
 
         payload = str(message.payload.decode("utf-8"))
-        self.log.info(f'Handling message from topic "{message.topic}": {payload}  with qos {message.qos} and retain flag {message.retain}')
+        self.log.info(
+            f'Handling message from topic "{message.topic}": {payload}  with qos {message.qos} and retain flag {message.retain}')
 
         msg_split = message.topic.split("/")
         if len(msg_split) > 2:
             if msg_split[0] == self.args.mqtt_ident and msg_split[-1] == "set":
                 await self.handle_message("/".join(msg_split[1:-1]), str(message.payload.decode("utf-8")))
         elif msg_split[0] == self.args.mqtt_ident and msg_split[1] == "control":
-            self.log.info("Receiving MQTT message '" + message.payload.decode("utf-8") + "' for Meross Bridge controlling")
+            self.log.info(
+                "Receiving MQTT message '" + message.payload.decode("utf-8") + "' for Meross Bridge controlling")
             if message.payload.decode("utf-8") == "resub":
                 await self.subscribe_broker()
             else:
-                self.log.info("Nothing to do with '" + message.payload.decode("utf-8") + "'" )
+                self.log.info("Nothing to do with '" + message.payload.decode("utf-8") + "'")
 
-        # Device level processing of the Message received from OpenHAB MQTT
+    # Device level processing of the Message received from OpenHAB MQTT
     # todo: Add support to change of color bulb color from related color bulb topic
     async def handle_message(self, topic, messageStr):
         # print("topic %s -> handling message: %s" % (topic, messageStr))
@@ -185,6 +189,23 @@ class MerossOpenHabBridge:
                                 await device[0].async_turn_on(channel=0)
                             elif msg['state'] == 'OFF':
                                 await device[0].async_turn_off(channel=0)
+                        elif 'rgb' in msg:
+                            # self.log.info(f'"For device {device[0].name} Will do rgb {msg['state']}"')
+                            # On attend une chaîne "R,G,B" (ex: "255,0,0")
+                            rgb_values = msg['rgb'].split(',')
+                            if len(rgb_values) == 3:
+                                r = int(rgb_values[0])
+                                g = int(rgb_values[1])
+                                b = int(rgb_values[2])
+
+                                self.log.info(f"Setting device {device[0].name} to RGB: {r},{g},{b}")
+
+                                # Appel à la librairie MerossIot
+                                # Note: async_set_light_color prend souvent des tuples RGB
+                                await device[0].async_set_light_color(rgb=(r, g, b), channel=0)
+                            else:
+                                self.log.error(f"Invalid RGB format received: {msg['rgb']}")
+
                     elif len(topic_split) == 2:
                         channel_name = topic_split[1]
                         cNo = -1
@@ -256,7 +277,8 @@ class MerossOpenHabBridge:
     # 21 Feb. 2023: Ajouté anager: MerossManager pour retirer erreur du mauvais nombre de parametres
     # event_handler() takes 3 positional arguments but 4 were given
     # https://community.openhab.org/t/meross-python-library-with-mqtt/83362/40?u=denis_lambert
-    async def event_handler(self, push_notification: GenericPushNotification, target_devices: [BaseDevice], manager: MerossManager):
+    async def event_handler(self, push_notification: GenericPushNotification, target_devices: [BaseDevice],
+                            manager: MerossManager):
         try:
             if push_notification.namespace == Namespace.CONTROL_BIND \
                     or push_notification.namespace == Namespace.SYSTEM_ONLINE \
@@ -304,7 +326,8 @@ class MerossOpenHabBridge:
                     else:
                         cNo = cTog[0]['channel']
 
-                    self.client.publish("meross/%s/channel_%s" % (target_devices[0].name, cNo), getJsonMsg(target_devices[0], cNo))
+                    self.client.publish("meross/%s/channel_%s" % (target_devices[0].name, cNo),
+                                        getJsonMsg(target_devices[0], cNo))
 
             elif push_notification.namespace == Namespace.CONTROL_LIGHT:
                 if len(target_devices) > 0:
@@ -324,13 +347,16 @@ class MerossOpenHabBridge:
         except:
             self.log.error("Unexpected error in push notification event_handler:", sys.exc_info()[0])
 
+
 def parse_command_line():
     parser = argparse.ArgumentParser(description='Meross MQTT bridge for OpenHAB')
 
     parser.add_argument('--mqtt-ident', dest='mqtt_ident', help='An unique mqtt ident to populate', default='meross')
-    parser.add_argument('--mqtt-server', dest='mqtt_server', help='Hostname or IP address of mqtt server', default='localhost')
+    parser.add_argument('--mqtt-server', dest='mqtt_server', help='Hostname or IP address of mqtt server',
+                        default='localhost')
 
-    parser.add_argument('--mqtt_usr', dest='mqtt_usr', help='Username for OpenHAB MQTT broker', default=None, required=True)
+    parser.add_argument('--mqtt_usr', dest='mqtt_usr', help='Username for OpenHAB MQTT broker', default=None,
+                        required=True)
     parser.add_argument('--mqtt_pswd', dest='mqtt_pswd',
                         help='Password for  OpenHAB MQTT broker (can be specified by environment variable OPENHAB_MQTT_PASSWORD)',
                         default=None, required=True)
