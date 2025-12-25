@@ -170,7 +170,7 @@ class MerossOpenHabBridge:
                 self.log.info("Nothing to do with '" + message.payload.decode("utf-8") + "'")
 
     # Device level processing of the Message received from OpenHAB MQTT
-    # todo: Add support to change of color bulb color from related color bulb topic
+
     async def handle_message(self, topic, messageStr):
         # print("topic %s -> handling message: %s" % (topic, messageStr))
         try:
@@ -238,7 +238,7 @@ class MerossOpenHabBridge:
     # where the expected json message is
     # { "state" : "OFF"} or { "state" : "ON"}
     # samples topics: meross/color-bulb/set, meross/Smart Outdoor Plug 2/channel_1/set meross/couleur/set
-    # todo: Add topic to support change of color bulb color
+
     async def subscribe_broker(self):
         # print("All the supported devices I found:")
         all_devices = self.manager.find_devices()
